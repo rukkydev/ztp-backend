@@ -26,7 +26,7 @@ public class EmailTemplateService {
             <p style="margin: 0 0 16px; font-size: 15px; line-height: 24px; color: #334155;">
                 A verification request was initiated for your Zero Trust Platform account.
             </p>
-            <table role="presentation" border="0" cellpadding="0" cellspacing="0" style="margin: 24px 0; width: 100%;">
+            <table role="presentation" border="0" cellpadding="0" cellspacing="0" style="margin: 24px 0; width: 100%%;">
                 <tr>
                     <td align="center">
                         <div style="display: inline-block; background-color: #0f172a; border: 1px solid #1e293b; border-radius: 8px; padding: 18px 36px; letter-spacing: 8px; font-size: 32px; font-weight: 700; color: #38bdf8; font-family: 'Courier New', Courier, monospace;">
@@ -58,7 +58,7 @@ public class EmailTemplateService {
             <p style="margin: 0 0 16px; font-size: 15px; line-height: 24px; color: #334155;">
                 We received a request to reset the password for your Zero Trust Platform account. Click the button below to set a new password:
             </p>
-            <table role="presentation" border="0" cellpadding="0" cellspacing="0" style="margin: 28px 0; width: 100%;">
+            <table role="presentation" border="0" cellpadding="0" cellspacing="0" style="margin: 28px 0; width: 100%%;">
                 <tr>
                     <td align="center">
                         <a href="%s" target="_blank" style="display: inline-block; background-color: #0284c7; color: #ffffff; text-decoration: none; font-size: 15px; font-weight: 600; padding: 14px 32px; border-radius: 6px; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">
