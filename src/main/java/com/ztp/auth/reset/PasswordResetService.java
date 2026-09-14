@@ -33,7 +33,7 @@ public class PasswordResetService {
     private final UserRepository userRepository;
     private final PasswordResetTokenRepository tokenRepository;
     private final PasswordEncoder passwordEncoder;
-    private final JavaMailSender mailSender;
+    private final com.ztp.mail.EmailTemplateService emailTemplateService;
     private final SessionRegistry sessionRegistry;
     private final AuditLogService auditLogService;
 	
@@ -123,23 +123,9 @@ public class PasswordResetService {
     }
 
     private void sendResetEmail(String to, String rawToken) {
-    String resetLink = frontendUrl + "/auth/reset-password.html?token=" + rawToken;
-    try {
-        SimpleMailMessage message = new SimpleMailMessage();
-        message.setTo(to);
-        message.setSubject("Reset your ZTP password");
-        message.setText("Click the link below to reset your password:\n" + resetLink
-                + "\nThis link expires in " + EXPIRY_MINUTES + " minutes."
-                + "\nIf you didn't request this, you can safely ignore this email.");
-        mailSender.send(message);
-    } catch (Exception ex) {
-        // Don't let a mail-provider outage take down the reset flow.
-        // The token is already persisted -- log loudly so this doesn't
-        // go unnoticed, but let the request complete normally.
-        org.slf4j.LoggerFactory.getLogger(PasswordResetService.class)
-                .error("Failed to send password reset email to {}: {}", to, ex.getMessage());
+        String resetLink = frontendUrl + "/auth/reset-password.html?token=" + rawToken;
+        emailTemplateService.sendPasswordResetEmail(to, resetLink, EXPIRY_MINUTES);
     }
-}
 
 private String resolveIpForRisk(HttpServletRequest request) {
     String forwarded = request.getHeader("X-Forwarded-For");

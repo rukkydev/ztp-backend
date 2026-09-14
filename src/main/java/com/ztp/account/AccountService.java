@@ -20,7 +20,7 @@ public class AccountService {
     private final UserRepository userRepository;
 	private final PasswordEncoder passwordEncoder;
 	private final AuditLogService auditLogService;
-	private final org.springframework.mail.javamail.JavaMailSender mailSender;
+	private final com.ztp.mail.EmailTemplateService emailTemplateService;
 
     public ProfileResponse getMyProfile() {
         return new ProfileResponse(currentUser());
@@ -73,18 +73,6 @@ public class AccountService {
 	}
 
 	private void sendTwoFactorDisabledEmail(User user) {
-		try {
-			org.springframework.mail.SimpleMailMessage message = new org.springframework.mail.SimpleMailMessage();
-			message.setTo(user.getEmail());
-			message.setSubject("Two-factor authentication was disabled on your ZTP account");
-			message.setText("Your two-factor authentication was just turned off.\n\n"
-					+ "If this wasn't you, your account may be at risk — please contact your administrator "
-					+ "immediately or reset your password.");
-			mailSender.send(message);
-		} catch (Exception ex) {
-			// Same resilience
-			org.slf4j.LoggerFactory.getLogger(AccountService.class)
-					.error("Failed to send 2FA-disabled notification email to {}: {}", user.getEmail(), ex.getMessage());
-		}
+		emailTemplateService.sendTwoFactorDisabledEmail(user.getEmail(), user.getUsername());
 	}
 }

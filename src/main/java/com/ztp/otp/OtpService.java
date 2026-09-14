@@ -19,7 +19,7 @@ public class OtpService {
 
     private final OneTimeCodeRepository codeRepository;
     private final PasswordEncoder passwordEncoder; // reused purely for hashing, not login
-    private final JavaMailSender mailSender;
+    private final com.ztp.mail.EmailTemplateService emailTemplateService;
 
     public void issueCode(Long userId, String email, String purpose) {
         // Invalidate any prior unconsumed codes for this purpose first,
@@ -63,22 +63,8 @@ public class OtpService {
     }
 
     private void sendEmail(String to, String rawCode, String purpose) {
-    try {
-        SimpleMailMessage message = new SimpleMailMessage();
-        message.setTo(to);
-        message.setSubject("Your ZTP verification code");
-        message.setText("Your verification code is: " + rawCode
-                + "\nThis code expires in " + EXPIRY_MINUTES + " minutes."
-                + "\nPurpose: " + purpose);
-        mailSender.send(message);
-    } catch (Exception ex) {
-        // Don't let a mail-provider outage take down the login flow.
-        // The code is already persisted -- log loudly so this doesn't
-        // go unnoticed, but let the request complete normally.
-        org.slf4j.LoggerFactory.getLogger(OtpService.class)
-                .error("Failed to send OTP email to {} for purpose {}: {}", to, purpose, ex.getMessage());
+        emailTemplateService.sendVerificationCodeEmail(to, rawCode, purpose, EXPIRY_MINUTES);
     }
-}
 
 
 }
