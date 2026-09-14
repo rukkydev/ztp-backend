@@ -23,7 +23,16 @@ public class AdminUserController {
 
     @GetMapping
     @PreAuthorize("hasAuthority('USER_VIEW')")
-    public ApiResponse<List<AdminUserResponse>> listUsers() {
+    public ApiResponse<?> listUsers(
+            @RequestParam(required = false) Integer page,
+            @RequestParam(defaultValue = "20") int pageSize,
+            @RequestParam(required = false, defaultValue = "id") String sort,
+            @RequestParam(required = false, defaultValue = "desc") String dir,
+            @RequestParam(required = false) String q,
+            @RequestParam(required = false) String status) {
+        if (page != null) {
+            return ApiResponse.success("Users retrieved", userService.searchUsers(page, pageSize, sort, dir, q, status));
+        }
         return ApiResponse.success("Users retrieved", userService.listUsers());
     }
 

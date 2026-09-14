@@ -50,6 +50,34 @@ public class UserService {
                 .toList();
     }
 
+    public com.ztp.common.PagedResponse<AdminUserResponse> searchUsers(
+            int page, int pageSize, String sort, String dir, String q, String status) {
+        Boolean enabled = null;
+        if ("Active".equalsIgnoreCase(status)) enabled = true;
+        else if ("Suspended".equalsIgnoreCase(status)) enabled = false;
+
+        String sortProp = (sort != null && !sort.isBlank()) ? sort : "id";
+        // Validate sort property against known entity properties to prevent SQL/property injection
+        if (!java.util.Set.of("id", "username", "email", "lastLogin", "createdAt", "department", "jobTitle").contains(sortProp)) {
+            sortProp = "id";
+        }
+
+        org.springframework.data.domain.Sort.Direction direction = "asc".equalsIgnoreCase(dir) 
+                ? org.springframework.data.domain.Sort.Direction.ASC 
+                : org.springframework.data.domain.Sort.Direction.DESC;
+
+        org.springframework.data.domain.Pageable pageable = org.springframework.data.domain.PageRequest.of(
+                Math.max(0, page), Math.max(1, pageSize), org.springframework.data.domain.Sort.by(direction, sortProp));
+
+        var resultPage = userRepository.searchUsers((q != null && !q.isBlank()) ? q.trim() : null, enabled, pageable);
+        List<AdminUserResponse> responses = resultPage.getContent().stream()
+                .map(AdminUserResponse::new)
+                .toList();
+
+        return new com.ztp.common.PagedResponse<>(responses, resultPage.getTotalElements(), page, pageSize);
+    }
+
+
 
 	public AdminUserResponse updateUser(Long userId, UpdateUserRequest request) {
     User user = userRepository.findById(userId)
