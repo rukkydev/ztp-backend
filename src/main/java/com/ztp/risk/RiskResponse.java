@@ -16,4 +16,5 @@ public class RiskResponse {
     private String riskLevel;
     private String recommendedAction;
     private List<ScoreReason> reasons;
+    private String engineVersion;
 }

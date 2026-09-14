@@ -24,15 +24,21 @@ public class ThreatController {
         return ApiResponse.success("Threats retrieved", service.listAll());
     }
 
+    @GetMapping("/{id}")
+    @PreAuthorize("hasAuthority('THREAT_MANAGE')")
+    public ApiResponse<ThreatResponse> getById(@PathVariable Long id) {
+        return ApiResponse.success("Threat retrieved", service.getById(id));
+    }
+
     @PatchMapping("/{id}")
     @PreAuthorize("hasAuthority('THREAT_MANAGE')")
     public ApiResponse<ThreatResponse> updateStatus(@PathVariable Long id, @Valid @RequestBody UpdateStatusRequest request) {
-        return ApiResponse.success("Threat updated", service.updateStatus(id, request.getStatus()));
+        return ApiResponse.success("Threat updated", service.updateStatus(id, request.getStatus(), request.getOutcome()));
     }
 
     @PatchMapping("/bulk-mitigate")
     @PreAuthorize("hasAuthority('THREAT_MANAGE')")
-    public ApiResponse<List<ThreatResponse>> bulkMitigate(@Valid @RequestBody BulkIdsRequest request) {
-        return ApiResponse.success("Threats mitigated", service.bulkMitigate(request.getIds()));
+    public ApiResponse<List<ThreatResponse>> bulkMitigate(@Valid @RequestBody com.ztp.threat.dto.BulkResolutionRequest request) {
+        return ApiResponse.success("Threats mitigated", service.bulkMitigate(request.getIds(), request.getOutcome()));
     }
 }

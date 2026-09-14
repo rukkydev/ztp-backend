@@ -15,6 +15,11 @@ public class AlertResponse {
     private final String username;
     private final LocalDateTime createdAt;
     private final LocalDateTime resolvedAt;
+    private final String correlationId;
+    private final String outcome;
+    private final java.util.List<com.ztp.risk.ScoreReason> reasons;
+
+    private static final com.fasterxml.jackson.databind.ObjectMapper OBJECT_MAPPER = new com.fasterxml.jackson.databind.ObjectMapper();
 
     public AlertResponse(Alert a) {
         this.id = a.getId();
@@ -26,5 +31,18 @@ public class AlertResponse {
         this.username = a.getUsername();
         this.createdAt = a.getCreatedAt();
         this.resolvedAt = a.getResolvedAt();
+        this.correlationId = a.getCorrelationId();
+        this.outcome = a.getOutcome();
+        this.reasons = parseReasons(a.getReasonsJson());
+    }
+
+    private static java.util.List<com.ztp.risk.ScoreReason> parseReasons(String json) {
+        if (json == null || json.isBlank()) return java.util.List.of();
+        try {
+            return OBJECT_MAPPER.readValue(json,
+                    OBJECT_MAPPER.getTypeFactory().constructCollectionType(java.util.List.class, com.ztp.risk.ScoreReason.class));
+        } catch (Exception e) {
+            return java.util.List.of();
+        }
     }
 }

@@ -42,6 +42,15 @@ public class Threat {
     @Column(name = "mitigated_at")
     private LocalDateTime mitigatedAt;
 
+    @Column(name = "correlation_id", length = 64)
+    private String correlationId;
+
+    @Column(name = "outcome", length = 30)
+    private String outcome; // CONFIRMED_THREAT | FALSE_POSITIVE
+
+    @Column(name = "reasons_json", length = 1000)
+    private String reasonsJson;
+
     @PrePersist
     protected void onCreate() {
         this.createdAt = LocalDateTime.now();

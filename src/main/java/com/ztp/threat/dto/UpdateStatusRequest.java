@@ -9,4 +9,6 @@ import lombok.Setter;
 public class UpdateStatusRequest {
     @NotBlank
     private String status;
+
+    private String outcome; // CONFIRMED_THREAT | FALSE_POSITIVE
 }

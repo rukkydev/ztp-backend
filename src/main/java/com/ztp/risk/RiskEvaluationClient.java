@@ -65,6 +65,6 @@ public class RiskEvaluationClient {
     }
 	
 	private RiskResponse safeDefault() {
-    return new RiskResponse(0, "LOW", "ALLOW", java.util.List.of());
+    return new RiskResponse(0, "LOW", "ALLOW", java.util.List.of(), null);
 }
 }

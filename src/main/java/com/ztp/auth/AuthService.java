@@ -40,6 +40,7 @@ public class AuthService {
     private final org.springframework.security.core.session.SessionRegistry sessionRegistry;
 	private final com.ztp.risk.RiskEvaluationClient riskClient;
 	private final com.ztp.session.device.ActiveSessionDeviceRepository activeSessionDeviceRepository;
+	private final com.ztp.threat.ResponseActionService responseActionService;
 
     public LoginResponse login(LoginRequest request, HttpServletRequest httpRequest, HttpServletResponse httpResponse) {
         try {
@@ -63,6 +64,9 @@ public class AuthService {
 				);
 				var riskResult = riskClient.evaluateWithMeta(riskRequest);
 				riskLogService.record(correlationId, riskRequest, riskResult.getResponse(), "BLOCK", riskResult.isEvaluateReached());
+
+				responseActionService.record(correlationId, "BLOCK_DEVICE", "EXECUTED",
+						"Authentication rejected: device is on blocklist", user.getId(), deviceId);
 
 				auditLogService.record("LOGIN_BLOCKED_DEVICE", user.getId(), user.getUsername(),
 					"Login attempt from a blocked device", httpRequest);
@@ -104,6 +108,8 @@ auditLogService.record("RISK_EVALUATED", user.getId(), user.getUsername(),
 
 
 if ("BLOCK".equals(risk.getRecommendedAction())) {
+    responseActionService.record(correlationId, "BLOCK_LOGIN", "EXECUTED",
+            "Login denied by automated risk engine (score=" + risk.getRiskScore() + ")", user.getId(), user.getUsername());
     auditLogService.record("LOGIN_BLOCKED_RISK", user.getId(), user.getUsername(),
             "Login blocked by risk engine, score=" + risk.getRiskScore(), httpRequest);
     throw new IllegalArgumentException("This login has been blocked for security reasons. Contact an administrator.");
@@ -112,6 +118,10 @@ if ("BLOCK".equals(risk.getRecommendedAction())) {
 boolean forceTwoFactor = "CHALLENGE".equals(risk.getRecommendedAction()) || user.isTwoFactorEnabled();
 
 if (forceTwoFactor) {
+    if ("CHALLENGE".equals(risk.getRecommendedAction())) {
+        responseActionService.record(correlationId, "FORCE_CHALLENGE", "EXECUTED",
+                "Risk-driven step-up 2FA challenge issued (score=" + risk.getRiskScore() + ")", user.getId(), user.getUsername());
+    }
     otpService.issueCode(user.getId(), user.getEmail(), "TWO_FACTOR");
     auditLogService.record("TWO_FACTOR_CODE_SENT", user.getId(), user.getUsername(),
             "2FA code sent for login (risk-driven: " + "CHALLENGE".equals(risk.getRecommendedAction()) + ")", httpRequest);

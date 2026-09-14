@@ -43,6 +43,8 @@ public class RiskLogService {
         log.setReasonsJson("[]");
     }
 
+    log.setEngineVersion(response.getEngineVersion());
+
     repository.save(log);
 }
 

@@ -67,6 +67,9 @@ public class RiskEvaluationLog {
 	@Column(name = "reasons_json", length = 1000)
 	private String reasonsJson;
 
+	@Column(name = "engine_version", length = 20)
+	private String engineVersion;
+
     private Boolean loginSucceeded;
     private Boolean challengeCompleted;
     private Boolean challengeFailed;
