@@ -31,18 +31,33 @@ public class SecurityConfig {
     private final RestAuthenticationEntryPoint restAuthenticationEntryPoint;
     private final RestAccessDeniedHandler restAccessDeniedHandler;
 	
-	@Bean
-public CorsConfigurationSource corsConfigurationSource() {
-    CorsConfiguration config = new CorsConfiguration();
-    config.setAllowedOrigins(List.of("http://localhost:5176"));
-    config.setAllowedMethods(List.of("GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"));
-    config.setAllowedHeaders(List.of("*"));
-    config.setAllowCredentials(true); // required since the frontend sends cookies
+    @org.springframework.beans.factory.annotation.Value("${app.frontend-url:http://localhost:5176}")
+    private String frontendUrl;
 
-    UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
-    source.registerCorsConfiguration("/**", config);
-    return source;
-}
+    @Bean
+    public CorsConfigurationSource corsConfigurationSource() {
+        CorsConfiguration config = new CorsConfiguration();
+        java.util.Set<String> origins = new java.util.LinkedHashSet<>();
+        if (frontendUrl != null && !frontendUrl.isBlank()) {
+            origins.add(frontendUrl.trim());
+        }
+        origins.add("http://localhost:5176");
+        origins.add("http://127.0.0.1:5176");
+        origins.add("http://localhost:5173");
+        origins.add("http://127.0.0.1:5173");
+        origins.add("http://localhost:3000");
+        origins.add("http://127.0.0.1:3000");
+
+        config.setAllowedOrigins(new java.util.ArrayList<>(origins));
+        config.setAllowedMethods(List.of("GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"));
+        config.setAllowedHeaders(List.of("*"));
+        config.setExposedHeaders(List.of("XSRF-TOKEN", "Set-Cookie"));
+        config.setAllowCredentials(true);
+
+        UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
+        source.registerCorsConfiguration("/**", config);
+        return source;
+    }
 
     @Bean
     public PasswordEncoder passwordEncoder() {
