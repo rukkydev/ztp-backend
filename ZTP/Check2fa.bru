@@ -1,0 +1,29 @@
+meta {
+  name: Check2fa
+  type: http
+  seq: 12
+}
+
+post {
+  url: {{BaseUrl}}/auth/2fa/verify
+  body: json
+  auth: inherit
+}
+
+headers {
+  X-XSRF-TOKEN: f4573f11-9a8b-47a3-b0f2-e417eafa50b6
+}
+
+body:json {
+  {
+  //   "username": "adaeze",
+    "email": "adaeze@example.com",
+    "password": "SuperSecret123",
+    "code": "865408"
+  }
+}
+
+settings {
+  encodeUrl: true
+  timeout: 0
+}

@@ -1,0 +1,28 @@
+meta {
+  name: Logout
+  type: http
+  seq: 3
+}
+
+post {
+  url: {{BaseUrl}}/auth/logout
+  body: json
+  auth: inherit
+}
+
+headers {
+  X-XSRF-TOKEN: c94478c2-e3a7-42c0-9183-b9d1759bff23
+}
+
+body:json {
+  {
+  //   "username": "adaeze",
+    "email": "adaeze@example.com",
+    "password": "SuperSecret123"
+  }
+}
+
+settings {
+  encodeUrl: true
+  timeout: 0
+}

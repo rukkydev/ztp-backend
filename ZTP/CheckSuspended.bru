@@ -1,0 +1,24 @@
+meta {
+  name: CheckSuspended
+  type: http
+  seq: 7
+}
+
+patch {
+  url: {{BaseUrl}}/admin/users/1
+  body: json
+  auth: inherit
+}
+
+headers {
+  X-XSRF-TOKEN: f712f695-e0ef-4129-a068-d933a7d483d1
+}
+
+body:json {
+  { "status": "Active" }
+}
+
+settings {
+  encodeUrl: true
+  timeout: 0
+}

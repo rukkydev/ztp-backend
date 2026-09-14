@@ -1,0 +1,16 @@
+meta {
+  name: AllUsers
+  type: http
+  seq: 6
+}
+
+get {
+  url: {{BaseUrl}}/admin/users
+  body: none
+  auth: inherit
+}
+
+settings {
+  encodeUrl: true
+  timeout: 0
+}

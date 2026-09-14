@@ -1,0 +1,20 @@
+meta {
+  name: AdminRoles
+  type: http
+  seq: 4
+}
+
+get {
+  url: {{BaseUrl}}/admin/roles
+  body: none
+  auth: inherit
+}
+
+headers {
+  X-XSRF-TOKEN: f712f695-e0ef-4129-a068-d933a7d483d1
+}
+
+settings {
+  encodeUrl: true
+  timeout: 0
+}

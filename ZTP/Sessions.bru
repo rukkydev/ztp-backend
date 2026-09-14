@@ -1,0 +1,16 @@
+meta {
+  name: Sessions
+  type: http
+  seq: 16
+}
+
+get {
+  url: {{BaseUrl}}/admin/sessions
+  body: none
+  auth: inherit
+}
+
+settings {
+  encodeUrl: true
+  timeout: 0
+}

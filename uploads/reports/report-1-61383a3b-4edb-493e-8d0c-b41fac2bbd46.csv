@@ -1,0 +1,7 @@
+id,username,email,role,enabled,accountLocked,createdAt
+1,adaeze,adaeze@example.com,SUPER_ADMIN,true,false,2026-08-02T15:44:49
+2,jsmith,jsmith@example.com,USER,true,false,2026-08-09T20:33:20
+3,mwanjiru,mwanjiru@example.com,USER,true,false,2026-08-09T20:33:20
+4,kolawale,kolawale@example.com,USER,true,true,2026-08-09T20:33:20
+5,tokafor,tokafor@example.com,SECURITY_NETWORK_ADMIN,true,false,2026-08-09T20:33:20
+6,simonholm,simonholm@gmail.com,USER,false,false,2026-08-19T08:37:13

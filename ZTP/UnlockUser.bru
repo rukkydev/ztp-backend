@@ -1,0 +1,20 @@
+meta {
+  name: UnlockUser
+  type: http
+  seq: 8
+}
+
+patch {
+  url: {{BaseUrl}}/admin/users/2/unlock
+  body: none
+  auth: inherit
+}
+
+headers {
+  X-XSRF-TOKEN: 1d652fa1-571d-4e65-91d6-2f7ddcc92441
+}
+
+settings {
+  encodeUrl: true
+  timeout: 0
+}

@@ -1,0 +1,28 @@
+meta {
+  name: Login
+  type: http
+  seq: 2
+}
+
+post {
+  url: {{BaseUrl}}/auth/login
+  body: json
+  auth: inherit
+}
+
+headers {
+  X-XSRF-TOKEN: dd5cd10a-b835-4c7c-9563-cc0785a164b3
+}
+
+body:json {
+  {
+  //   "username": "adaeze",
+    "email": "adaeze@example.com",
+    "password": "SuperSecret123"
+  }
+}
+
+settings {
+  encodeUrl: true
+  timeout: 0
+}

@@ -1,0 +1,27 @@
+meta {
+  name: NewDevice
+  type: http
+  seq: 14
+}
+
+post {
+  url: {{BaseUrl}}/auth/verify-device
+  body: json
+  auth: inherit
+}
+
+headers {
+  X-XSRF-TOKEN: dd5cd10a-b835-4c7c-9563-cc0785a164b3
+}
+
+body:json {
+  // Request
+  { "email": "adaeze@example.com", "code": "579962", "rememberDevice": true }
+  
+  
+}
+
+settings {
+  encodeUrl: true
+  timeout: 0
+}
