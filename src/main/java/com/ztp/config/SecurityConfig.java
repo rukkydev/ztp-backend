@@ -41,6 +41,7 @@ public class SecurityConfig {
         if (frontendUrl != null && !frontendUrl.isBlank()) {
             origins.add(frontendUrl.trim());
         }
+        origins.add("https://ztp-frontend.vercel.app");
         origins.add("http://localhost:5176");
         origins.add("http://127.0.0.1:5176");
         origins.add("http://localhost:5173");
@@ -73,9 +74,31 @@ public class SecurityConfig {
         return provider;
     }
 
+    @org.springframework.beans.factory.annotation.Value("${app.cookie.same-site:None}")
+    private String cookieSameSite;
+
+    @org.springframework.beans.factory.annotation.Value("${app.cookie.secure:true}")
+    private boolean cookieSecure;
+
+    @Bean
+    public org.springframework.session.web.http.CookieSerializer cookieSerializer() {
+        var serializer = new org.springframework.session.web.http.DefaultCookieSerializer();
+        serializer.setCookieName("SESSION");
+        serializer.setSameSite(cookieSameSite);
+        serializer.setUseSecureCookie(cookieSecure);
+        serializer.setUseHttpOnlyCookie(true);
+        serializer.setCookiePath("/");
+        return serializer;
+    }
+
     @Bean
     public CsrfTokenRepository csrfTokenRepository() {
-        return CookieCsrfTokenRepository.withHttpOnlyFalse();
+        CookieCsrfTokenRepository repository = CookieCsrfTokenRepository.withHttpOnlyFalse();
+        repository.setCookieCustomizer(builder -> builder
+            .sameSite(cookieSameSite)
+            .secure(cookieSecure)
+            .path("/"));
+        return repository;
     }
 
     @Bean
