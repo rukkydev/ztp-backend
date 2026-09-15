@@ -52,7 +52,8 @@ public class SecurityConfig {
         config.setAllowedOrigins(new java.util.ArrayList<>(origins));
         config.setAllowedMethods(List.of("GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"));
         config.setAllowedHeaders(List.of("*"));
-        config.setExposedHeaders(List.of("XSRF-TOKEN", "Set-Cookie"));
+        config.setExposedHeaders(List.of("XSRF-TOKEN", "X-XSRF-TOKEN", "Set-Cookie"));
+
         config.setAllowCredentials(true);
 
         UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
@@ -115,11 +116,14 @@ public class SecurityConfig {
 	public SecurityFilterChain securityFilterChain(HttpSecurity http, CsrfTokenRepository csrfTokenRepository,
 													 CorsConfigurationSource corsConfigurationSource,
 													 org.springframework.security.core.session.SessionRegistry sessionRegistry) throws Exception {
+		CsrfTokenRequestAttributeHandler requestHandler = new CsrfTokenRequestAttributeHandler();
+		requestHandler.setCsrfRequestAttributeName(null);
+
 		http
 			.cors(cors -> cors.configurationSource(corsConfigurationSource))
 			.csrf(csrf -> csrf
 				.csrfTokenRepository(csrfTokenRepository)
-				.csrfTokenRequestHandler(new CsrfTokenRequestAttributeHandler())
+				.csrfTokenRequestHandler(requestHandler)
 			)
 			.addFilterAfter(new CsrfCookieFilter(), CsrfFilter.class)
 			.formLogin(form -> form.disable())
@@ -135,10 +139,11 @@ public class SecurityConfig {
 			.authorizeHttpRequests(auth -> auth
 				.requestMatchers(HttpMethod.OPTIONS, "/**").permitAll()
 				.requestMatchers("/api/auth/me").authenticated()
-				.requestMatchers("/api/auth/**", "/api/csrf-token").permitAll()
+				.requestMatchers("/api/auth/**", "/api/csrf-token", "/api/csrf-cookie").permitAll()
 				.requestMatchers(HttpMethod.GET, "/uploads/avatars/**").permitAll()
 				.anyRequest().authenticated()
 			);
+
 
 		return http.build();
 	}
