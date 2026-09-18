@@ -41,7 +41,9 @@ public class UserService {
         user.setPasswordHash(passwordEncoder.encode(request.getPassword()));
         user.setRole(defaultRole);
 
-        return userRepository.save(user);
+        User saved = userRepository.save(user);
+        auditLogService.record("USER_REGISTERED", saved.getId(), saved.getUsername(), "User self-registered with standard USER role", null);
+        return saved;
     }
 
     public List<AdminUserResponse> listUsers() {
