@@ -33,14 +33,18 @@ public class AdminUserSeeder implements CommandLineRunner {
 
     @Override
     public void run(String... args) {
-        if (userRepository.count() > 0) { return; }
+        if (userRepository.existsByEmail(adminEmail)) {
+            log.info("AdminUserSeeder: Admin user {} already exists, skipping.", adminEmail);
+            return;
+        }
         Role superAdmin = roleRepository.findByName("SUPER_ADMIN").orElse(null);
         if (superAdmin == null) {
             log.warn("AdminUserSeeder: SUPER_ADMIN role not found -- skipping.");
             return;
         }
+        String finalUsername = userRepository.existsByUsername(adminUsername) ? "admin_root" : adminUsername;
         User admin = new User();
-        admin.setUsername(adminUsername);
+        admin.setUsername(finalUsername);
         admin.setEmail(adminEmail);
         admin.setPasswordHash(passwordEncoder.encode(adminPassword));
         admin.setRole(superAdmin);
@@ -50,6 +54,6 @@ public class AdminUserSeeder implements CommandLineRunner {
         admin.setJobTitle("System Administrator");
         admin.setDepartment("IT");
         userRepository.save(admin);
-        log.info("AdminUserSeeder: SUPER_ADMIN created email={} username={}.", adminEmail, adminUsername);
+        log.info("AdminUserSeeder: Successfully seeded SUPER_ADMIN: email={}, username={}", adminEmail, finalUsername);
     }
 }
