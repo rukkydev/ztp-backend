@@ -20,12 +20,13 @@ import java.nio.charset.StandardCharsets;
 public class EmailTemplateService {
 
     private static final Logger log = LoggerFactory.getLogger(EmailTemplateService.class);
+
     private final JavaMailSender mailSender;
 
     @Value("${resend.api-key:}")
     private String resendApiKey;
 
-    @Value("${resend.from-email:onboarding@resend.dev}")
+    @Value("${resend.from-email:}")
     private String resendFromEmail;
 
     public void sendVerificationCodeEmail(String toEmail, String code, String purpose, int expiryMinutes) {
@@ -88,7 +89,12 @@ public class EmailTemplateService {
                     If you did not make this request, you can safely disregard this email. Your password will remain unchanged.
                 </p>
             </div>
-            """.formatted(escapeHtml(resetLink), expiryMinutes, escapeHtml(resetLink), escapeHtml(resetLink));
+            """.formatted(
+                escapeHtml(resetLink),
+                expiryMinutes,
+                escapeHtml(resetLink),
+                escapeHtml(resetLink)
+            );
 
         String fullHtml = wrapInLayout(subject, previewText, contentHtml);
         sendHtmlMail(toEmail, subject, fullHtml);
@@ -174,13 +180,29 @@ public class EmailTemplateService {
                 </table>
             </body>
             </html>
-            """.formatted(escapeHtml(title), escapeHtml(previewText), bodyContent);
+            """.formatted(
+                escapeHtml(title),
+                escapeHtml(previewText),
+                bodyContent
+            );
     }
 
     private void sendHtmlMail(String to, String subject, String htmlContent) {
+
+        /*
+         * Use Resend when RESEND_API_KEY is configured.
+         */
         if (resendApiKey != null && !resendApiKey.isBlank()) {
+
+            if (resendFromEmail == null || resendFromEmail.isBlank()) {
+                throw new IllegalStateException(
+                    "RESEND_FROM_EMAIL is not configured."
+                );
+            }
+
             try {
                 Resend resend = new Resend(resendApiKey);
+
                 CreateEmailOptions params = CreateEmailOptions.builder()
                         .from(resendFromEmail)
                         .to(to)
@@ -189,34 +211,88 @@ public class EmailTemplateService {
                         .build();
 
                 CreateEmailResponse response = resend.emails().send(params);
-                log.info("Sent security email via Resend to {} with subject: '{}' (Resend ID: {})", to, subject, response.getId());
+
+                log.info(
+                    "Sent security email via Resend to {} with subject: '{}' (Resend ID: {})",
+                    to,
+                    subject,
+                    response.getId()
+                );
+
                 return;
+
             } catch (Exception ex) {
-                log.error("Failed to deliver email via Resend to {}: {}. Attempting fallback to SMTP...", to, ex.getMessage());
+
+                log.error(
+                    "Failed to deliver email via Resend to {}: {}",
+                    to,
+                    ex.getMessage(),
+                    ex
+                );
+
+                throw new IllegalStateException(
+                    "Failed to deliver email via Resend.",
+                    ex
+                );
             }
         }
 
+        /*
+         * SMTP fallback.
+         */
         try {
-            if (mailSender != null) {
-                MimeMessage message = mailSender.createMimeMessage();
-                MimeMessageHelper helper = new MimeMessageHelper(message, MimeMessageHelper.MULTIPART_MODE_MIXED_RELATED, StandardCharsets.UTF_8.name());
-                helper.setTo(to);
-                helper.setSubject(subject);
-                helper.setText(htmlContent, true);
-                mailSender.send(message);
-                log.info("Sent HTML security email via SMTP to {} with subject: '{}'", to, subject);
+
+            if (mailSender == null) {
+                throw new IllegalStateException(
+                    "JavaMailSender is not configured."
+                );
             }
+
+            MimeMessage message = mailSender.createMimeMessage();
+
+            MimeMessageHelper helper = new MimeMessageHelper(
+                message,
+                MimeMessageHelper.MULTIPART_MODE_MIXED_RELATED,
+                StandardCharsets.UTF_8.name()
+            );
+
+            helper.setTo(to);
+            helper.setSubject(subject);
+            helper.setText(htmlContent, true);
+
+            mailSender.send(message);
+
+            log.info(
+                "Sent HTML security email via SMTP to {} with subject: '{}'",
+                to,
+                subject
+            );
+
         } catch (MessagingException | RuntimeException ex) {
-            log.error("Failed to deliver HTML email via SMTP to {}: {}", to, ex.getMessage());
+
+            log.error(
+                "Failed to deliver HTML email via SMTP to {}: {}",
+                to,
+                ex.getMessage(),
+                ex
+            );
+
+            throw new IllegalStateException(
+                "Failed to deliver email via SMTP.",
+                ex
+            );
         }
     }
 
     private String escapeHtml(String input) {
-        if (input == null) return "";
+        if (input == null) {
+            return "";
+        }
+
         return input.replace("&", "&amp;")
-                    .replace("<", "&lt;")
-                    .replace(">", "&gt;")
-                    .replace("\"", "&quot;")
-                    .replace("'", "&#x27;");
+                .replace("<", "&lt;")
+                .replace(">", "&gt;")
+                .replace("\"", "&quot;")
+                .replace("'", "&#x27;");
     }
 }
