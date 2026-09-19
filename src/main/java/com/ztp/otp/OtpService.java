@@ -1,10 +1,6 @@
 package com.ztp.otp;
 
 import lombok.RequiredArgsConstructor;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-import org.springframework.mail.SimpleMailMessage;
-import org.springframework.mail.javamail.JavaMailSender;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
@@ -15,21 +11,27 @@ import java.time.LocalDateTime;
 @RequiredArgsConstructor
 public class OtpService {
 
-    private static final Logger log = LoggerFactory.getLogger(OtpService.class);
-    private static final int CODE_LENGTH = 6;
     private static final int EXPIRY_MINUTES = 10;
     private static final SecureRandom RANDOM = new SecureRandom();
 
     private final OneTimeCodeRepository codeRepository;
-    private final PasswordEncoder passwordEncoder; // reused purely for hashing, not login
+    private final PasswordEncoder passwordEncoder;
     private final com.ztp.mail.EmailTemplateService emailTemplateService;
 
     public void issueCode(Long userId, String email, String purpose) {
-        // Invalidate any prior unconsumed codes for this purpose first,
-        // so only the most recently issued code is ever valid.
-        codeRepository.findAllByUserIdAndPurposeAndConsumedFalse(userId, purpose)
-                .forEach(c -> { c.setConsumed(true); codeRepository.save(c); });
 
+        /*
+         * Invalidate previous unused codes for this purpose.
+         */
+        codeRepository.findAllByUserIdAndPurposeAndConsumedFalse(userId, purpose)
+                .forEach(c -> {
+                    c.setConsumed(true);
+                    codeRepository.save(c);
+                });
+
+        /*
+         * Generate a new 6-digit verification code.
+         */
         String rawCode = generateCode();
 
         OneTimeCode code = OneTimeCode.builder()
@@ -37,41 +39,77 @@ public class OtpService {
                 .codeHash(passwordEncoder.encode(rawCode))
                 .purpose(purpose)
                 .consumed(false)
-                .expiresAt(LocalDateTime.now().plusMinutes(EXPIRY_MINUTES))
+                .expiresAt(
+                    LocalDateTime.now().plusMinutes(EXPIRY_MINUTES)
+                )
                 .build();
+
         codeRepository.save(code);
 
-        log.info("==========================================================");
-        log.info("OTP CODE FOR {}: [{}] (Purpose: {})", email, rawCode, purpose);
-        log.info("==========================================================");
+        /*
+         * Send the code by email.
+         *
+         * If email delivery fails, immediately invalidate the OTP
+         * so that a code the user never received cannot remain usable.
+         */
+        try {
 
-        sendEmail(email, rawCode, purpose);
+            emailTemplateService.sendVerificationCodeEmail(
+                    email,
+                    rawCode,
+                    purpose,
+                    EXPIRY_MINUTES
+            );
+
+        } catch (RuntimeException ex) {
+
+            code.setConsumed(true);
+            codeRepository.save(code);
+
+            throw ex;
+        }
     }
 
-    public boolean verifyCode(Long userId, String purpose, String submittedCode) {
-        var candidates = codeRepository.findAllByUserIdAndPurposeAndConsumedFalse(userId, purpose);
+    public boolean verifyCode(
+            Long userId,
+            String purpose,
+            String submittedCode
+    ) {
+
+        var candidates =
+                codeRepository.findAllByUserIdAndPurposeAndConsumedFalse(
+                        userId,
+                        purpose
+                );
 
         for (OneTimeCode code : candidates) {
+
             if (code.getExpiresAt().isBefore(LocalDateTime.now())) {
-                continue; // expired, skip
+                continue;
             }
-            if (passwordEncoder.matches(submittedCode, code.getCodeHash())) {
+
+            if (passwordEncoder.matches(
+                    submittedCode,
+                    code.getCodeHash()
+            )) {
+
                 code.setConsumed(true);
                 codeRepository.save(code);
+
                 return true;
             }
         }
+
         return false;
     }
 
     private String generateCode() {
-        int code = 100000 + RANDOM.nextInt(900000); // always 6 digits, no leading zero issue
+
+        /*
+         * Always generates a 6-digit code.
+         */
+        int code = 100000 + RANDOM.nextInt(900000);
+
         return String.valueOf(code);
     }
-
-    private void sendEmail(String to, String rawCode, String purpose) {
-        emailTemplateService.sendVerificationCodeEmail(to, rawCode, purpose, EXPIRY_MINUTES);
-    }
-
-
 }
