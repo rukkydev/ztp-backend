@@ -1,10 +1,14 @@
 package com.ztp.mail;
 
+import com.resend.Resend;
+import com.resend.services.emails.model.CreateEmailOptions;
+import com.resend.services.emails.model.CreateEmailResponse;
 import jakarta.mail.MessagingException;
 import jakarta.mail.internet.MimeMessage;
 import lombok.RequiredArgsConstructor;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.mail.javamail.JavaMailSender;
 import org.springframework.mail.javamail.MimeMessageHelper;
 import org.springframework.stereotype.Service;
@@ -17,6 +21,12 @@ public class EmailTemplateService {
 
     private static final Logger log = LoggerFactory.getLogger(EmailTemplateService.class);
     private final JavaMailSender mailSender;
+
+    @Value("${resend.api-key:}")
+    private String resendApiKey;
+
+    @Value("${resend.from-email:onboarding@resend.dev}")
+    private String resendFromEmail;
 
     public void sendVerificationCodeEmail(String toEmail, String code, String purpose, int expiryMinutes) {
         String subject = "Your ZTP Verification Code: " + code;
@@ -168,16 +178,36 @@ public class EmailTemplateService {
     }
 
     private void sendHtmlMail(String to, String subject, String htmlContent) {
+        if (resendApiKey != null && !resendApiKey.isBlank()) {
+            try {
+                Resend resend = new Resend(resendApiKey);
+                CreateEmailOptions params = CreateEmailOptions.builder()
+                        .from(resendFromEmail)
+                        .to(to)
+                        .subject(subject)
+                        .html(htmlContent)
+                        .build();
+
+                CreateEmailResponse response = resend.emails().send(params);
+                log.info("Sent security email via Resend to {} with subject: '{}' (Resend ID: {})", to, subject, response.getId());
+                return;
+            } catch (Exception ex) {
+                log.error("Failed to deliver email via Resend to {}: {}. Attempting fallback to SMTP...", to, ex.getMessage());
+            }
+        }
+
         try {
-            MimeMessage message = mailSender.createMimeMessage();
-            MimeMessageHelper helper = new MimeMessageHelper(message, MimeMessageHelper.MULTIPART_MODE_MIXED_RELATED, StandardCharsets.UTF_8.name());
-            helper.setTo(to);
-            helper.setSubject(subject);
-            helper.setText(htmlContent, true);
-            mailSender.send(message);
-            log.info("Sent HTML security email to {} with subject: '{}'", to, subject);
+            if (mailSender != null) {
+                MimeMessage message = mailSender.createMimeMessage();
+                MimeMessageHelper helper = new MimeMessageHelper(message, MimeMessageHelper.MULTIPART_MODE_MIXED_RELATED, StandardCharsets.UTF_8.name());
+                helper.setTo(to);
+                helper.setSubject(subject);
+                helper.setText(htmlContent, true);
+                mailSender.send(message);
+                log.info("Sent HTML security email via SMTP to {} with subject: '{}'", to, subject);
+            }
         } catch (MessagingException | RuntimeException ex) {
-            log.error("Failed to deliver HTML email to {}: {}", to, ex.getMessage());
+            log.error("Failed to deliver HTML email via SMTP to {}: {}", to, ex.getMessage());
         }
     }
 
