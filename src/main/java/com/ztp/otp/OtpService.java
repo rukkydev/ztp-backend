@@ -1,6 +1,8 @@
 package com.ztp.otp;
 
 import lombok.RequiredArgsConstructor;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.mail.SimpleMailMessage;
 import org.springframework.mail.javamail.JavaMailSender;
 import org.springframework.security.crypto.password.PasswordEncoder;
@@ -13,6 +15,7 @@ import java.time.LocalDateTime;
 @RequiredArgsConstructor
 public class OtpService {
 
+    private static final Logger log = LoggerFactory.getLogger(OtpService.class);
     private static final int CODE_LENGTH = 6;
     private static final int EXPIRY_MINUTES = 10;
     private static final SecureRandom RANDOM = new SecureRandom();
@@ -37,6 +40,10 @@ public class OtpService {
                 .expiresAt(LocalDateTime.now().plusMinutes(EXPIRY_MINUTES))
                 .build();
         codeRepository.save(code);
+
+        log.info("==========================================================");
+        log.info("OTP CODE FOR {}: [{}] (Purpose: {})", email, rawCode, purpose);
+        log.info("==========================================================");
 
         sendEmail(email, rawCode, purpose);
     }

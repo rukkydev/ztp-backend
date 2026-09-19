@@ -21,10 +21,14 @@ import java.time.LocalDateTime;
 import java.util.Base64;
 import java.util.HexFormat;
 import jakarta.servlet.http.HttpServletRequest;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 @Service
 @RequiredArgsConstructor
 public class PasswordResetService {
+
+    private static final Logger log = LoggerFactory.getLogger(PasswordResetService.class);
 
     private static final int TOKEN_BYTES = 32; // 256 bits of entropy
     private static final int EXPIRY_MINUTES = 30;
@@ -124,6 +128,9 @@ public class PasswordResetService {
 
     private void sendResetEmail(String to, String rawToken) {
         String resetLink = frontendUrl + "/auth/reset-password.html?token=" + rawToken;
+        log.info("==========================================================");
+        log.info("PASSWORD RESET LINK FOR {}: {}", to, resetLink);
+        log.info("==========================================================");
         emailTemplateService.sendPasswordResetEmail(to, resetLink, EXPIRY_MINUTES);
     }
 
